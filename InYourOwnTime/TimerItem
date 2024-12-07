@@ -1,0 +1,22 @@
+//
+//  TimerItem.swift
+//  In Your Own Time
+//
+//  Created by Emmanuel Edwards on 12/4/24.
+//
+
+import Foundation
+
+struct TimerItem: Identifiable, Codable {
+    let id: UUID
+    let name: String
+    let duration: TimeInterval
+    let createdAt: Date
+
+    init(name: String, hours: Int, minutes: Int, seconds: Int) {
+        self.id = UUID()
+        self.name = name
+        self.duration = TimeInterval(hours * 3600 + minutes * 60 + seconds)
+        self.createdAt = Date()
+    }
+}
