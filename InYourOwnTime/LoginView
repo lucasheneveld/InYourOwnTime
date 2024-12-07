@@ -1,0 +1,39 @@
+//
+//  LoginView.swift
+//  In Your Own Time
+//
+//  Created by Emmanuel Edwards on 12/6/24.
+//
+
+import SwiftUI
+
+struct LoginView: View {
+    @ObservedObject var authViewModel: UserAuthViewModel
+    @State private var username = ""
+    @State private var password = ""
+
+    var body: some View {
+        VStack(spacing: 20) {
+            TextField("Username", text: $username)
+                .textFieldStyle(.roundedBorder)
+                #if os(iOS)
+                .autocapitalization(.none) // Prevents automatic capitalization on iOS
+                #endif
+
+
+            SecureField("Password", text: $password)
+                .textFieldStyle(.roundedBorder)
+
+            Button("Login") {
+                authViewModel.login(username: username, password: password)
+            }
+            .buttonStyle(.borderedProminent)
+
+            if let errorMessage = authViewModel.errorMessage {
+                Text(errorMessage)
+                    .foregroundColor(.red)
+            }
+        }
+        .padding()
+    }
+}
