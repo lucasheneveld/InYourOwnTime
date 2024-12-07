@@ -1,0 +1,75 @@
+//
+//  AddTimerView.swift
+//  In Your Own Time
+//
+//  Created by Emmanuel Edwards on 12/6/24.
+//
+
+
+import SwiftUI
+
+struct AddTimerView: View {
+    @ObservedObject var viewModel: TimerViewModel
+    @Binding var isPresented: Bool
+
+    @State private var timerName: String = ""
+    @State private var hours: String = "0"
+    @State private var minutes: String = "0"
+    @State private var seconds: String = "0"
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Timer Details")) {
+                    TextField("Timer Name", text: $timerName)
+
+                    TextField("Hours", text: $hours)
+                        .onChange(of: hours) {
+                            hours = hours.filter { $0.isNumber }
+                        }
+                        .frame(maxWidth: 100)
+
+                    TextField("Minutes", text: $minutes)
+                        .onChange(of: minutes) {
+                            minutes = minutes.filter { $0.isNumber }
+                        }
+                        .frame(maxWidth: 100)
+
+                    TextField("Seconds", text: $seconds)
+                        .onChange(of: seconds) {
+                            seconds = seconds.filter { $0.isNumber }
+                        }
+                        .frame(maxWidth: 100)
+                }
+
+
+                Button("Save Timer") {
+                    if let hourValue = Int(hours),
+                       let minuteValue = Int(minutes),
+                       let secondValue = Int(seconds) {
+                        viewModel.addTimerToHistory(name: timerName, hours: hourValue, minutes: minuteValue, seconds: secondValue)
+                        isPresented = false
+                    }
+                }
+                .disabled(timerName.isEmpty)
+            }
+            .navigationTitle("Add Timer")
+            .toolbar {
+                #if os(iOS)
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        isPresented = false
+                    }
+                }
+                #elseif os(macOS)
+                ToolbarItem {
+                    Button("Cancel") {
+                        isPresented = false
+                    }
+                }
+                #endif
+            }
+
+        }
+    }
+}
