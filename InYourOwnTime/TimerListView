@@ -1,0 +1,74 @@
+//
+//  TimerListView.swift
+//  In Your Own Time
+//
+//  Created by Emmanuel Edwards on 12/6/24.
+//
+import SwiftUI
+
+struct TimerListView: View {
+    @ObservedObject var viewModel: TimerViewModel
+    @State private var isAddingTimer = false
+
+    var body: some View {
+        NavigationView {
+            List {
+                ForEach(viewModel.timerHistory) { timer in
+                    VStack(alignment: .leading) {
+                        Text(timer.name)
+                            .font(.headline)
+                        Text("Duration: \(viewModel.formattedTime(timer.duration))")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
+                    .onTapGesture {
+                        viewModel.startCountdown(timerItem: timer)
+                    }
+                }
+                .onDelete(perform: deleteTimers)
+            }
+            .navigationTitle("Saved Timers")
+            .toolbar {
+                toolbarContent
+            }
+            .sheet(isPresented: $isAddingTimer) {
+                AddTimerView(viewModel: viewModel, isPresented: $isAddingTimer)
+            }
+        }
+        .applyNavigationViewStyle() // Cross-platform navigation style
+    }
+
+    // Platform-specific toolbar content
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        #if os(iOS)
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Button(action: { isAddingTimer.toggle() }) {
+                Image(systemName: "plus")
+            }
+        }
+        #elseif os(macOS)
+        ToolbarItem {
+            Button(action: { isAddingTimer.toggle() }) {
+                Image(systemName: "plus")
+            }
+        }
+        #endif
+    }
+
+    private func deleteTimers(at offsets: IndexSet) {
+        viewModel.deleteTimer(at: offsets)
+    }
+}
+
+// Add a cross-platform navigation style modifier
+extension View {
+    @ViewBuilder
+    func applyNavigationViewStyle() -> some View {
+        #if os(iOS)
+        self.navigationViewStyle(StackNavigationViewStyle())
+        #else
+        self
+        #endif
+    }
+}
