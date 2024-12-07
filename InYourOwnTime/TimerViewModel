@@ -1,0 +1,171 @@
+//
+//  TimerViewModel.swift
+//  In Your Own Time
+//
+//  Created by Emmanuel Edwards on 12/4/24.
+//
+
+// TimerViewModel.swift
+import Foundation
+import SwiftUI
+
+@MainActor
+class TimerViewModel: ObservableObject {
+    @Published var currentTimer: TimerItem?
+    @Published var remainingTime: TimeInterval = 0
+    @Published var isTimerActive: Bool = false
+    @Published var timerHistory: [TimerItem] = []
+
+    @Published var intervalConfiguration: [(work: TimeInterval, rest: TimeInterval)] = []
+    @Published var currentIntervalIndex: Int = 0
+    @Published var isWorkInterval: Bool = true
+
+    private var timer: Timer?
+    private var currentUser: User?
+
+    var onTimerComplete: (() -> Void)?
+
+    init() {}
+
+    // MARK: - User Management
+    func setCurrentUser(_ user: User) {
+        currentUser = user
+        print("Current user set: \(user.username)")
+        loadTimerHistory(for: user)
+    }
+
+    func clearCurrentUser() {
+        print("Clearing user session for: \(currentUser?.username ?? "None")")
+        currentUser = nil
+        timerHistory = []
+    }
+
+    func resetForLogout() {
+        clearCurrentUser()
+        currentTimer = nil
+        remainingTime = 0
+        isTimerActive = false
+        intervalConfiguration = []
+        currentIntervalIndex = 0
+        isWorkInterval = true
+    }
+
+    // MARK: - Timer History Methods
+    func addTimerToHistory(name: String, hours: Int, minutes: Int, seconds: Int) {
+        guard let user = currentUser else {
+            print("No current user to save the timer for.")
+            return
+        }
+
+        let newTimer = TimerItem(name: name, hours: hours, minutes: minutes, seconds: seconds)
+        timerHistory.insert(newTimer, at: 0) // Add to the top of the history
+        saveTimerHistory(for: user) // Persist changes to UserDefaults
+        print("Timer added successfully: \(newTimer)")
+    }
+
+    func loadTimerHistory(for user: User) {
+        let key = "timers_\(user.username)"
+        if let data = UserDefaults.standard.data(forKey: key),
+           let decoded = try? JSONDecoder().decode([TimerItem].self, from: data) {
+            timerHistory = decoded
+            print("Loaded timer history for user: \(user.username)")
+        } else {
+            timerHistory = []
+            print("No timer history found for user: \(user.username)")
+        }
+    }
+
+    func deleteTimer(at offsets: IndexSet) {
+        guard let user = currentUser else {
+            print("No current user to delete timers for.")
+            return
+        }
+
+        timerHistory.remove(atOffsets: offsets)
+        saveTimerHistory(for: user)
+
+        print("Timers deleted for user \(user.username). Updated history: \(timerHistory)")
+    }
+
+    private func saveTimerHistory(for user: User) {
+        let key = "timers_\(user.username)"
+        if let encoded = try? JSONEncoder().encode(timerHistory) {
+            UserDefaults.standard.set(encoded, forKey: key)
+            print("Timer history saved for user: \(user.username)")
+        } else {
+            print("Failed to save timer history for user: \(user.username)")
+        }
+    }
+
+    // MARK: - Timer Management
+    func startCountdown(timerItem: TimerItem) {
+        currentTimer = timerItem
+        remainingTime = timerItem.duration
+        isTimerActive = true
+
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            Task { @MainActor in
+                if self.remainingTime > 0 {
+                    self.remainingTime -= 1
+                } else {
+                    self.stopTimer()
+                }
+            }
+        }
+    }
+
+    func stopTimer() {
+        timer?.invalidate()
+        timer = nil
+        isTimerActive = false
+        remainingTime = 0
+        onTimerComplete?()
+    }
+
+    func startIntervalTimer(intervals: [(work: TimeInterval, rest: TimeInterval)]) {
+        self.intervalConfiguration = intervals
+        self.currentIntervalIndex = 0
+        self.isWorkInterval = true
+        self.remainingTime = intervals.first?.work ?? 0
+        self.isTimerActive = true
+
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            Task { @MainActor in
+                if self.remainingTime > 0 {
+                    self.remainingTime -= 1
+                } else {
+                    self.switchToNextInterval()
+                }
+            }
+        }
+    }
+
+    private func switchToNextInterval() {
+        if isWorkInterval {
+            remainingTime = intervalConfiguration[currentIntervalIndex].rest
+        } else {
+            currentIntervalIndex += 1
+            if currentIntervalIndex < intervalConfiguration.count {
+                remainingTime = intervalConfiguration[currentIntervalIndex].work
+            } else {
+                stopTimer()
+                return
+            }
+        }
+        isWorkInterval.toggle()
+    }
+
+    var currentIntervalType: String {
+        isWorkInterval ? "Work" : "Rest"
+    }
+
+    // MARK: - Utility
+    func formattedTime(_ time: TimeInterval) -> String {
+        let hours = Int(time) / 3600
+        let minutes = (Int(time) % 3600) / 60
+        let seconds = Int(time) % 60
+        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+    }
+}
