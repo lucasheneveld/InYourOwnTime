@@ -1,0 +1,79 @@
+//
+//  UserAuthViewModel.swift
+//  In Your Own Time
+//
+//  Created by Emmanuel Edwards on 12/6/24.
+//
+
+import Foundation
+import SwiftUI
+
+@MainActor
+class UserAuthViewModel: ObservableObject {
+    @Published var currentUser: User? = nil
+    @Published var isAuthenticated: Bool = false
+    @Published var errorMessage: String?
+
+    private let userKey = "registeredUsers"
+
+    /// Register a new user
+    func register(username: String, password: String, confirmPassword: String) {
+        guard !username.isEmpty, !password.isEmpty else {
+            errorMessage = "All fields are required"
+            return
+        }
+
+        guard password == confirmPassword else {
+            errorMessage = "Passwords do not match"
+            return
+        }
+
+        var users = loadUsers()
+        if users[username] != nil {
+            errorMessage = "Username already exists"
+            return
+        }
+
+        let user = User(username: username, password: password)
+        users[username] = user
+        saveUsers(users)
+        currentUser = user
+        isAuthenticated = true // Update authentication state
+        errorMessage = nil
+    }
+    /// Log in an existing user
+    func login(username: String, password: String) {
+        let users = loadUsers()
+        guard let user = users[username], user.password == password else {
+            errorMessage = "Invalid username or password"
+            return
+        }
+
+        currentUser = user
+        isAuthenticated = true // Update authentication state
+        errorMessage = nil
+    }
+
+
+    /// Log out the current user
+    func logout() {
+        currentUser = nil
+        isAuthenticated = false
+    }
+
+    /// Load registered users from UserDefaults
+    private func loadUsers() -> [String: User] {
+        guard let data = UserDefaults.standard.data(forKey: userKey),
+              let users = try? JSONDecoder().decode([String: User].self, from: data) else {
+            return [:]
+        }
+        return users
+    }
+
+    /// Save registered users to UserDefaults
+    private func saveUsers(_ users: [String: User]) {
+        if let data = try? JSONEncoder().encode(users) {
+            UserDefaults.standard.set(data, forKey: userKey)
+        }
+    }
+}
