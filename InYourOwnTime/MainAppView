@@ -1,0 +1,43 @@
+//
+//  MainAppView.swift
+//  In Your Own Time
+//
+//  Created by Emmanuel Edwards on 12/6/24.
+//
+
+
+import SwiftUI
+
+struct MainAppView: View {
+    @ObservedObject var authViewModel: UserAuthViewModel
+    @ObservedObject var timerViewModel: TimerViewModel
+
+    var body: some View {
+        NavigationView {
+            VStack {
+                TimerView()
+            }
+            .toolbar {
+                #if os(iOS)
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Log Out") {
+                        logout()
+                    }
+                }
+                #elseif os(macOS)
+                ToolbarItemGroup {
+                    Button("Log Out") {
+                        logout()
+                    }
+                }
+                #endif
+            }
+        }
+    }
+
+    private func logout() {
+        timerViewModel.resetForLogout() // Call the method directly on the object
+        authViewModel.logout()
+    }
+
+}
