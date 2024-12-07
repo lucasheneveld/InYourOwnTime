@@ -1,0 +1,19 @@
+//
+//  In_Your_Own_TimeApp.swift
+//  In Your Own Time
+//
+//  Created by Emmanuel Edwards on 12/4/24.
+//
+
+import SwiftUI
+
+@main
+struct In_Your_Own_TimeApp: App {
+    @StateObject private var authViewModel = UserAuthViewModel()
+
+    var body: some Scene {
+        WindowGroup {
+            AuthLandingView(authViewModel: authViewModel)
+        }
+    }
+}
