@@ -1,0 +1,31 @@
+//
+//  AuthLandingView.swift
+//  In Your Own Time
+//
+//  Created by Emmanuel Edwards on 12/6/24.
+//
+
+
+import SwiftUI
+
+struct AuthLandingView: View {
+    @ObservedObject var authViewModel: UserAuthViewModel
+
+    var body: some View {
+        Group {
+            if authViewModel.isAuthenticated {
+                MainAppView(authViewModel: authViewModel, timerViewModel: TimerViewModel())
+            } else {
+                NavigationView {
+                    VStack(spacing: 20) {
+                        NavigationLink("Login", destination: LoginView(authViewModel: authViewModel))
+                        Button("Register") {
+                            // Open Registration View
+                        }
+                    }
+                    .navigationTitle("Welcome")
+                }
+            }
+        }
+    }
+}
