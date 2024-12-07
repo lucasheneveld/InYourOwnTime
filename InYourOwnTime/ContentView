@@ -1,0 +1,22 @@
+//
+//  ContentView.swift
+//  In Your Own Time
+//
+//  Created by Emmanuel Edwards on 12/4/24.
+//
+
+// ContentView.swift
+import SwiftUI
+
+struct ContentView: View {
+    var body: some View {
+        TimerView() // Main view showing the TimerView
+    }
+}
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+    }
+}
+
