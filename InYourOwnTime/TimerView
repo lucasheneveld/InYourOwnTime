@@ -1,0 +1,59 @@
+//
+//  TimerView.swift
+//  In Your Own Time
+//
+//  Created by Emmanuel Edwards on 12/4/24.
+//
+
+// TimerView.swift
+import SwiftUI
+struct TimerView: View {
+    @StateObject private var viewModel = TimerViewModel()
+
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                // Current timer display
+                Text(viewModel.currentTimer?.name ?? "No Active Timer")
+                    .font(.headline)
+
+                Text(viewModel.formattedTime(viewModel.remainingTime))
+                    .font(.largeTitle)
+                    .padding()
+
+                // Reset button
+                if viewModel.isTimerActive {
+                    Button("Stop Timer") {
+                        viewModel.stopTimer()
+                    }
+                    .padding()
+                    .background(Color.red)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                }
+
+                // Navigation to saved timers
+                NavigationLink("View Saved Timers") {
+                    TimerListView(viewModel: viewModel)
+                }
+                .font(.title)
+                .padding()
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+
+                // Navigation to interval timer
+                NavigationLink("Interval Timer") {
+                    IntervalTimerView(viewModel: viewModel)
+                }
+                .font(.title)
+                .padding()
+                .background(Color.green)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+            }
+            .navigationTitle("Workout Timer")
+            .padding()
+        }
+    }
+}
