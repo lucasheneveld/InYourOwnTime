@@ -1,0 +1,105 @@
+//
+//  InternalTimerView.swift
+//  In Your Own Time
+//
+//  Created by Emmanuel Edwards on 12/6/24.
+//
+
+import SwiftUI
+
+struct IntervalTimerView: View {
+    @ObservedObject var viewModel: TimerViewModel
+    @State private var intervals: [(work: String, rest: String)] = [(work: "60", rest: "120")]
+    @State private var isRunning = false
+
+    var body: some View {
+        VStack(spacing: 20) {
+            if isRunning {
+                // Display current interval status
+                Text(viewModel.isWorkInterval ? "Work" : "Rest")
+                    .font(.headline)
+                    .foregroundColor(viewModel.isWorkInterval ? .green : .blue)
+
+                Text(viewModel.formattedTime(viewModel.remainingTime))
+                    .font(.largeTitle)
+                    .padding()
+
+                Button("Stop Timer") {
+                    viewModel.stopTimer()
+                    isRunning = false
+                }
+                .padding()
+                .background(Color.red)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+            } else {
+                // Configure intervals
+                List {
+                    ForEach(0..<intervals.count, id: \.self) { index in
+                        HStack {
+                            #if os(iOS)
+                            // iOS: Use number pad
+                            TextField("Work (sec)", text: $intervals[index].work)
+                                .keyboardType(.numberPad)
+                                .textFieldStyle(.roundedBorder)
+                            TextField("Rest (sec)", text: $intervals[index].rest)
+                                .keyboardType(.numberPad)
+                                .textFieldStyle(.roundedBorder)
+                            #elseif os(macOS)
+                            // macOS: Constrain field width and use physical keyboard
+                            TextField("Work (sec)", text: $intervals[index].work)
+                                .frame(maxWidth: 80)
+                                .textFieldStyle(.roundedBorder)
+                            TextField("Rest (sec)", text: $intervals[index].rest)
+                                .frame(maxWidth: 80)
+                                .textFieldStyle(.roundedBorder)
+                            #endif
+                        }
+                    }
+                    .onDelete(perform: deleteIntervals) // Enable swipe-to-delete
+                }
+
+                Button("Add Interval") {
+                    intervals.append((work: "60", rest: "120"))
+                }
+                .padding()
+                .background(Color.green)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+
+                Button("Start Timer") {
+                    let intervalDurations = intervals.compactMap { interval -> (work: TimeInterval, rest: TimeInterval)? in
+                        guard let work = TimeInterval(interval.work),
+                              let rest = TimeInterval(interval.rest)
+                        else {
+                            return nil
+                        }
+                        return (work, rest)
+                    }
+
+                    if !intervalDurations.isEmpty {
+                        viewModel.startIntervalTimer(intervals: intervalDurations)
+                        isRunning = true
+                    }
+                }
+                .padding()
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+            }
+        }
+        .navigationTitle("Interval Timer")
+        .padding()
+    }
+
+    // Function to delete intervals at specified offsets
+    private func deleteIntervals(at offsets: IndexSet) {
+        intervals.remove(atOffsets: offsets)
+    }
+}
+
+struct IntervalTimerView_Previews: PreviewProvider {
+    static var previews: some View {
+        IntervalTimerView(viewModel: TimerViewModel())
+    }
+}
